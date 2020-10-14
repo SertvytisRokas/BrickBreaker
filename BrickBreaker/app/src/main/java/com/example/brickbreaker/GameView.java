@@ -35,6 +35,7 @@ public class GameView extends SurfaceView implements Runnable {
     public List<Coordinates> coordlist = new ArrayList<>();
     public List<Coordinates> savedCoord = new ArrayList<>();
     public List<BrickParameters> brickParametersList = new ArrayList<>();
+    public MapGenerator mapGenerator;
 
     private int xDelta;
 
@@ -49,11 +50,11 @@ public class GameView extends SurfaceView implements Runnable {
 
 
 
-
+        mapGenerator = new MapGenerator(3, 7);
         background = new Background(screenX, screenY, getResources());
         paddle = new Paddle(screenX, getResources());
         ball = new Ball(screenX, screenY, getResources());
-        generateCoordinates(10, 8);
+//        generateCoordinates(10, 8);
         paint = new Paint();
         paint.setTextSize(50);
         paint.setColor(Color.WHITE);
@@ -70,75 +71,17 @@ public class GameView extends SurfaceView implements Runnable {
 
             canvas.drawBitmap(paddle.getPaddle(), paddle.x, paddle.y, paint);
             canvas.drawBitmap(ball.getBall(), ball.positionX, ball.positionY, paint);
-
+            mapGenerator.draw(canvas);
 //            for(int i=0; i<coordlist.size(); i++) {
 //                canvas.drawBitmap(createBrick(screenX / 10, screenX / 15, false), coordlist.get(i).x, coordlist.get(i).y, paint);
 //            }
 
-            generateBricks(5, 5, screenX/10, screenX/15, canvas);
+            //generateBricks(5, 5, screenX/10, screenX/15, canvas);
 
 
             getHolder().unlockCanvasAndPost(canvas);
         }
     }
-
-    public void generateBricks(int numOfRows, int numOfColumns, int width, int height, Canvas canvas){
-        for(int row = 30; row<screenY/2; row+=screenX/numOfRows){
-            for(int col = 30; col<screenX - screenX/15; col+= screenX/numOfColumns){
-                if(!checkIfBallCollides(col, row, height, width)){
-                    for(Coordinates coordinates : savedCoord) {
-                        if(!(coordinates.x == col && coordinates.y == row)) {
-                            canvas.drawBitmap(createBrick(width, height, false), col, row, paint);
-                        }
-                    }
-                } else{
-                    Coordinates coordinates = new Coordinates(col, row);
-                    savedCoord.add(coordinates);
-                    score++;
-                }
-            }
-        }
-
-    }
-
-
-    public boolean checkIfBallCollides(int positionX, int positionY, int height, int width){
-        boolean isCollision = false;
-        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX >= positionX - ball.width){
-//            randomX*=-1;
-            isCollision = true;}
-        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX <= positionX + width){
-//            randomX*=-1;
-            isCollision = true;}
-        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY <= positionY + height){
-//            randomY*=-1;
-            isCollision = true;}
-        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY >= positionY + ball.width){
-//            randomY*=-1;
-            isCollision = true;}
-        return isCollision;
-    }
-
-    public void generateCoordinates(int numOfRows, int numOfColumns) {
-        for (int row = 30; row < screenY / 2; row += screenX/numOfRows) {
-            for (int col = 30; col < screenX - screenX/15; col += screenX/numOfColumns) {
-                Coordinates coordinates = new Coordinates(col, row);
-                coordlist.add(coordinates);
-
-            }
-        }
-    }
-    public static Bitmap createBrick(int width, int height, boolean isDouble){
-        Bitmap brick = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(brick);
-        Paint paint = new Paint();
-        int newColor= Color.RED;
-        paint.setColor(newColor);
-        canvas.drawRect(0f, 0f, width, height, paint);
-        return brick;
-    }
-
-
     @Override
     public void run() {
         while(isRunning){
@@ -241,35 +184,6 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-
-
-
-
-
-
-
-//    public void drawBricks(int level, Canvas canvas)
-
-
-
-//    public void buildBricks(int level){
-//        Brick testBrick = new Brick(getResources(), false);
-//        if(level == 1){
-//            bricks = new Brick[100];
-//            int counter = 0;
-//            for(int row = 30; row<screenY/2; row+=testBrick.height) {
-//                for (int col = 30; col < screenX - testBrick.width; col += testBrick.width) {
-//                    Brick brick = new Brick(getResources(), false);
-//                    bricks[counter] = brick;
-//                    counter++;
-//                }
-//            }
-//
-//
-//
-//        }
-//    }
-
     private void sleep() throws InterruptedException {
         Thread.sleep(17);
     }
@@ -315,3 +229,84 @@ public class GameView extends SurfaceView implements Runnable {
         return true;
     }
 }
+
+
+//    public void generateBricks(int numOfRows, int numOfColumns, int width, int height, Canvas canvas){
+//        for(int row = 30; row<screenY/2; row+=screenX/numOfRows){
+//            for(int col = 30; col<screenX - screenX/15; col+= screenX/numOfColumns){
+//                if(!checkIfBallCollides(col, row, height, width)){
+//                    for(Coordinates coordinates : savedCoord) {
+//                        if(!(coordinates.x == col && coordinates.y == row)) {
+//                            canvas.drawBitmap(createBrick(width, height, false), col, row, paint);
+//                        }
+//                    }
+//                } else{
+//                    Coordinates coordinates = new Coordinates(col, row);
+//                    savedCoord.add(coordinates);
+//                    score++;
+//                }
+//            }
+//        }
+//
+//    }
+
+
+//    public boolean checkIfBallCollides(int positionX, int positionY, int height, int width){
+//        boolean isCollision = false;
+//        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX >= positionX - ball.width){
+////            randomX*=-1;
+//            isCollision = true;}
+//        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX <= positionX + width){
+////            randomX*=-1;
+//            isCollision = true;}
+//        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY <= positionY + height){
+////            randomY*=-1;
+//            isCollision = true;}
+//        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY >= positionY + ball.width){
+////            randomY*=-1;
+//            isCollision = true;}
+//        return isCollision;
+//    }
+
+//    public void generateCoordinates(int numOfRows, int numOfColumns) {
+//        for (int row = 30; row < screenY / 2; row += screenX/numOfRows) {
+//            for (int col = 30; col < screenX - screenX/15; col += screenX/numOfColumns) {
+//                Coordinates coordinates = new Coordinates(col, row);
+//                coordlist.add(coordinates);
+//
+//            }
+//        }
+//    }
+//    public static Bitmap createBrick(int width, int height, boolean isDouble){
+//        Bitmap brick = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(brick);
+//        Paint paint = new Paint();
+//        int newColor= Color.RED;
+//        paint.setColor(newColor);
+//        canvas.drawRect(0f, 0f, width, height, paint);
+//        return brick;
+//    }
+
+
+
+//    public void drawBricks(int level, Canvas canvas)
+
+
+
+//    public void buildBricks(int level){
+//        Brick testBrick = new Brick(getResources(), false);
+//        if(level == 1){
+//            bricks = new Brick[100];
+//            int counter = 0;
+//            for(int row = 30; row<screenY/2; row+=testBrick.height) {
+//                for (int col = 30; col < screenX - testBrick.width; col += testBrick.width) {
+//                    Brick brick = new Brick(getResources(), false);
+//                    bricks[counter] = brick;
+//                    counter++;
+//                }
+//            }
+//
+//
+//
+//        }
+//    }
