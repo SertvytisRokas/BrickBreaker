@@ -5,14 +5,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.example.brickbreaker.GameActivity.screenX;
 import static com.example.brickbreaker.GameActivity.screenY;
 
 public class MapGenerator {
-
     int map[][];
     int width, height;
 
@@ -23,7 +19,6 @@ public class MapGenerator {
                 map[i][j] = 1;
             }
         }
-
         width = (screenX-screenX/10)/col;
         height = (screenY/4)/row;
     }
@@ -32,10 +27,9 @@ public class MapGenerator {
         for(int i=0; i<map.length; i++){
             for(int j=0; j<map[0].length; j++){
                 if(map[i][j] > 0){
-                    canvas.drawBitmap(createBrick(width-10, height-10, false), j*width+80, i*height+50, paint);
+                    canvas.drawBitmap(createBrick(width - 10, height - 10, false), j * width + 60, i * height + 100, paint);
                 }
             }
-
         }
     }
             public static Bitmap createBrick(int width, int height, boolean isDouble){

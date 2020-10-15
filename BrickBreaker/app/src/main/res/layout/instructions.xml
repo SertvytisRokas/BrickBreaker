@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:id="@+id/layout"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/background"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/backbutton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BACK" />
+
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="match_parent"
+                android:layout_height="148dp"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/logo" />
+
+            <ImageView
+                android:id="@+id/instructions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_below="@+id/logo"
+                android:src="@drawable/instructions" />
+
+            <TextView
+                android:id="@+id/controls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/instructions"
+                android:layout_marginLeft="20dp"
+                android:text="Controls:"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+
+            <TextView
+                android:id="@+id/infoLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/controls"
+                android:layout_marginLeft="20dp"
+                android:text="Click left side of the screen to move paddle to the left side"
+                android:textColor="#ffffff"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/infoRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/infoLeft"
+                android:layout_marginLeft="20dp"
+                android:text="Click right side of the screen to move paddle to the right side"
+                android:textColor="#ffffff"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/objective"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/infoRight"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:text="Objective:"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+
+            <TextView
+                android:id="@+id/objectiveText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/objective"
+                android:layout_marginLeft="20dp"
+                android:text="Complete levels and increase your score by destroying bricks with the ball"
+                android:textColor="#ffffff"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/powerups"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/objectiveText"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:text="Power-ups: "
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+
+            <ImageView
+                android:id="@+id/life"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_below="@id/powerups"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:src="@drawable/life" />
+
+            <TextView
+                android:id="@+id/lifeinfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/life"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:text="Get an extra life"
+                android:textColor="#ffffff" />
+
+            <ImageView
+                android:id="@+id/paddlelengthen"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_below="@id/lifeinfo"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:src="@drawable/paddlelengthen" />
+
+            <TextView
+                android:id="@+id/lengtheninfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_below="@+id/paddlelengthen"
+                android:layout_centerHorizontal="true"
+                android:text="Increase the size of the paddle"
+                android:textColor="#ffffff" />
+
+            <ImageView
+                android:id="@+id/takelife"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_below="@id/lengtheninfo"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:src="@drawable/takelife" />
+
+            <TextView
+                android:id="@+id/takelifeinfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/takelife"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:text="Lose one life"
+                android:textColor="#ffffff" />
+
+            <ImageView
+                android:id="@+id/shortenpaddle"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_below="@id/takelifeinfo"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="15dp"
+                android:src="@drawable/paddledecrease" />
+
+            <TextView
+                android:id="@+id/shortenpaddleinfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_below="@+id/shortenpaddle"
+                android:layout_centerHorizontal="true"
+                android:text="Decrease the size of the paddle"
+                android:textColor="#ffffff" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

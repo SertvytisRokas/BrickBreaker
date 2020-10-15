@@ -1,50 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:layout_height="match_parent">
 
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:src="@drawable/background"
-        android:scaleType="centerCrop"
-        />
+        android:scaleType="centerCrop" />
+
 
     <ImageView
         android:id="@+id/logo"
         android:layout_width="match_parent"
         android:layout_height="148dp"
-        android:layout_marginTop="200dp"
+        android:layout_marginTop="50dp"
         android:src="@drawable/logo" />
-
-    <Button
-        android:id="@+id/start"
-        android:layout_width="223dp"
-        android:layout_height="50dp"
-        android:background="#6E6E6E"
-        android:text="START"
-        android:textColor="#ffffff"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/logo"
-        android:layout_marginBottom="25dp"
-        android:textSize="25dp" />
-
-    <Button
-        android:id="@+id/instructions"
-        android:layout_width="223dp"
-        android:layout_height="50dp"
-        android:background="#6E6E6E"
-        android:text="INSTRUCTIONS"
-        android:textColor="#ffffff"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/start"
-        android:layout_marginBottom="25dp"
-        android:textSize="25dp" />
 
     <TextView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Your score:"
+        android:layout_below="@+id/gameover"
+        android:layout_centerHorizontal="true"
+        android:textAllCaps="true"
+        android:textSize="30sp"
+        android:textColor="#ffffff"
+        android:id="@+id/score"
+        android:layout_marginBottom="100dp" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/gameover"
+        android:id="@+id/gameover"
+        android:layout_below="@+id/logo" />
+
+    <Button
+        android:id="@+id/playagain"
+        android:layout_width="223dp"
+        android:layout_height="50dp"
+        android:background="#6E6E6E"
+        android:text="PLAY AGAIN"
+        android:textColor="#ffffff"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/score"
+        android:layout_marginBottom="25dp"
+        android:textSize="25dp" />
+
+    <Button
+        android:id="@+id/exit"
+        android:layout_width="223dp"
+        android:layout_height="50dp"
+        android:background="#6E6E6E"
+        android:text="EXIT"
+        android:textColor="#ffffff"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/playagain"
+        android:textSize="25dp" />
+
 
 </RelativeLayout>

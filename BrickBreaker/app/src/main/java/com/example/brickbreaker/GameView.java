@@ -1,14 +1,19 @@
 package com.example.brickbreaker;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Build;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
 public class GameView extends SurfaceView implements Runnable {
     private Thread thread;
@@ -17,28 +22,34 @@ public class GameView extends SurfaceView implements Runnable {
     private Paint paint;
     public static float screenRatioX, screenRatioY;
     private GameActivity gameActivity;
-    private int screenX, screenY, score = 0;
+    private int screenX, screenY;
+    public int score = 0;
     private Paddle paddle;
     private Ball ball;
     private double speed = 4;
     private double randomX, randomY;
     private boolean isBallMoving = false;
-    private boolean isLevelBuilt = false;
     public int lives = 3;
-    public int level = 0;
-    public List<Coordinates> coordlist = new ArrayList<>();
-    public List<Coordinates> savedCoord = new ArrayList<>();
-    public List<BrickParameters> brickParametersList = new ArrayList<>();
-    public LevelGenerator levelGenerator;
+    public int level = 1;
     private MapGenerator mapGenerator;
-    int rows = 7;
-    int columns = 5;
-    int brickColor = Color.RED;
-    int index = 0;
-    private int xDelta;
+    int rows = 6;
+    int columns = 3;
     int totalBricks;
+    boolean isGameOver = false;
+    Canvas canvas;
+    boolean needNewLevel = false;
+    int collisionCounter;
+    int whenToResetCollCounter;
+    int numOfExtraLives = 3;
+    PowerUp life;
+    PowerUp paddleLengthen;
+    PowerUp paddleShort;
+    PowerUp takeLife;
+    int originalPaddleWidth;
+    private SoundPool soundPool;
+    private int sound;
 
-    public GameView(GameActivity gameActivity, int screenX, int screenY, int level) {
+    public GameView(GameActivity gameActivity, int screenX, int screenY) {
         super(gameActivity);
         this.gameActivity = gameActivity;
         this.screenX = screenX;
@@ -47,75 +58,100 @@ public class GameView extends SurfaceView implements Runnable {
         screenRatioY = 1920f / screenY;
 
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            AudioAttributes audioAttributes = new AudioAttributes.Builder().
+                    setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).
+                    setUsage(AudioAttributes.USAGE_GAME).
+                    build();
+            soundPool = new SoundPool.Builder().setAudioAttributes(audioAttributes).build();
+        } else {
+            soundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+        }
+        sound = soundPool.load(gameActivity, R.raw.hit, 1);
         mapGenerator = new MapGenerator(rows, columns);
         totalBricks = rows * columns;
         background = new Background(screenX, screenY, getResources());
         paddle = new Paddle(screenX, getResources());
         ball = new Ball(screenX, screenY, getResources());
-
+        life = new Life(-50, -50, getResources(), false);
+        paddleLengthen = new PaddleLengthen(-50, -50, getResources(), false);
+        paddleShort = new PaddleShort(-50, -50, getResources(), false);
+        takeLife = new TakeLife(-50, -50, getResources(), false);
         paint = new Paint();
         paint.setTextSize(50);
         paint.setColor(Color.WHITE);
-
-
-
-
-
-
-
+        originalPaddleWidth = paddle.width;
     }
-    private void draw(){
-        if(getHolder().getSurface().isValid()){
-            Canvas canvas = getHolder().lockCanvas();
-            canvas.drawBitmap(background.background, background.x, background.y, paint);
 
+
+    private void draw() {
+        if (getHolder().getSurface().isValid()) {
+            canvas = getHolder().lockCanvas();
+            canvas.drawBitmap(background.background, background.x, background.y, paint);
+            canvas.drawText("Current score: " + score, screenX / 3, 50, paint);
+            canvas.drawText("Lives: " + lives, screenX / 4 * 3, 50, paint);
+            canvas.drawText("Level: " + level, screenX / 40, 50, paint);
+            if (life.isDropping && ball.isMoving) {
+                canvas.drawBitmap(life.getPowerUp(), life.positionX, life.positionY, paint);
+            }
+            if (paddleLengthen.isDropping && ball.isMoving) {
+                canvas.drawBitmap(paddleLengthen.getPowerUp(), paddleLengthen.positionX, paddleLengthen.positionY, paint);
+            }
+            if (paddleShort.isDropping && ball.isMoving) {
+                canvas.drawBitmap(paddleShort.getPowerUp(), paddleShort.positionX, paddleShort.positionY, paint);
+            }
+            if (takeLife.isDropping && ball.isMoving) {
+                canvas.drawBitmap(takeLife.getPowerUp(), takeLife.positionX, takeLife.positionY, paint);
+            }
+            if (totalBricks <= 0) {
+                resetBallAndPaddle();
+                canvas.drawText("Level completed!", screenX / 3, screenY / 2, paint);
+                canvas.drawText("Click anywhere to continue..", screenX / 4, screenY / 2 + screenY / 6, paint);
+                if (needNewLevel) {
+                    resetBallAndPaddle();
+                    newLevel(level);
+                    mapGenerator = new MapGenerator(++rows, ++columns);
+                    totalBricks = rows * columns;
+                    needNewLevel = false;
+                }
+                getHolder().unlockCanvasAndPost(canvas);
+                return;
+            }
             canvas.drawBitmap(paddle.getPaddle(), paddle.x, paddle.y, paint);
             canvas.drawBitmap(ball.getBall(), ball.positionX, ball.positionY, paint);
             mapGenerator.draw(canvas, paint);
-
-
-
-//            mapGenerator.draw(canvas);
-//            for(int i=0; i<coordlist.size(); i++) {
-//                canvas.drawBitmap(createBrick(screenX / 10, screenX / 15, false), coordlist.get(i).x, coordlist.get(i).y, paint);
-//            }
-
-            //generateBricks(5, 5, screenX/10, screenX/15, canvas);
-
-
-//            for(Coordinates coordinates:levelGenerator.coordinatesList){
-//                if(coordinates.isAlive()){
-//                    Bitmap brick = Bitmap.createBitmap(levelGenerator.width, levelGenerator.height, Bitmap.Config.ARGB_8888);
-//                    Paint tempPaint = new Paint();
-//                    paint.setColor(brickColor);
-//                    canvas.drawBitmap(brick, levelGenerator.coordinatesList.get(index).x, levelGenerator.coordinatesList.get(index).y, paint);
-//                    System.out.println(levelGenerator.coordinatesList.get(index).toString());
-//                }
-//                index++;
-//            }
-
-
-
             getHolder().unlockCanvasAndPost(canvas);
         }
     }
 
-//        public static Bitmap createBrick(int width, int height, boolean isDouble){
-//        Bitmap brick = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-//        Canvas canvas = new Canvas(brick);
-//        Paint paint = new Paint();
-//        int newColor= Color.RED;
-//        paint.setColor(newColor);
-//        canvas.drawRect(0f, 0f, width, height, paint);
-//        return brick;
-//    }
+    private void newLevel(int level) {
+        if (level <= 3) {
+            whenToResetCollCounter = 5;
+            increaseBallSpeed(collisionCounter);
+            this.numOfExtraLives = 3;
+        }
+        if (level > 3 && level <= 6) {
+            rows += 1;
+            speed += 2;
+            this.numOfExtraLives = 4;
+        }
+        if (level > 6 && level < 15) {
+            rows += 2;
+            columns += 1;
+            speed += 3;
+            this.numOfExtraLives = 5;
+        }
+    }
 
+    void resetBallAndPaddle() {
+        ball = new Ball(screenX, screenY, getResources());
+        paddle = new Paddle(screenX, getResources());
+    }
 
     @Override
     public void run() {
-        while(isRunning){
-
-            if(paddle.isMovingLeft == true && ball.isMoving == false || paddle.isMovingRight == true && ball.isMoving == false){
+        while (isRunning) {
+            if (paddle.isMovingLeft && !ball.isMoving || paddle.isMovingRight && !ball.isMoving) {
                 releaseBall(speed);
                 ball.isMoving = true;
             }
@@ -129,148 +165,281 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
-    private void update(){
+    void increaseBallSpeed(int collisionCounter) {
+        if (collisionCounter >= whenToResetCollCounter) {
+            randomY += 0.5;
+        }
+    }
 
+    void checkGameOver() {
+        if (lives <= 0) {
+            isGameOver = true;
+        }
+    }
 
+    void checkTakeLifeCollision() {
+        Rect takeLifeRect = new Rect(takeLife.positionX, takeLife.positionY, takeLife.positionX + takeLife.width, takeLife.positionY + takeLife.width);
+        Rect paddleRect = new Rect(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height);
+        if (Rect.intersects(takeLifeRect, paddleRect)) {
+            takeAwayLife();
+            paddleLengthen.isDropping = false;
+            paddleLengthen.positionX = -50;
+            paddleLengthen.positionY = -50;
+        } else if (paddleLengthen.positionY >= screenY) {
+            paddleLengthen.isDropping = false;
+            paddleLengthen.positionX = -50;
+            paddleLengthen.positionY = -50;
+        }
+    }
+
+    private void takeAwayLife() {
+        lives--;
+    }
+
+    void checkPaddleLengthenCollision() {
+        Rect paddleLRect = new Rect(paddleLengthen.positionX, paddleLengthen.positionY, paddleLengthen.positionX + paddleLengthen.width, paddleLengthen.positionY + paddleLengthen.width);
+        Rect paddleRect = new Rect(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height);
+        if (Rect.intersects(paddleLRect, paddleRect)) {
+            increasePaddleWidth();
+            paddleLengthen.isDropping = false;
+            paddleLengthen.positionX = -50;
+            paddleLengthen.positionY = -50;
+        } else if (paddleLengthen.positionY >= screenY) {
+            paddleLengthen.isDropping = false;
+            paddleLengthen.positionX = -50;
+            paddleLengthen.positionY = -50;
+        }
+    }
+
+    void checkPaddleShortCollision() {
+        Rect paddleSRect = new Rect(paddleShort.positionX, paddleShort.positionY, paddleShort.positionX + paddleShort.width, paddleShort.positionY + paddleShort.width);
+        Rect paddleRect = new Rect(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height);
+        if (Rect.intersects(paddleSRect, paddleRect)) {
+            decreasePaddleWidth();
+            paddleShort.isDropping = false;
+            paddleShort.positionX = -50;
+            paddleShort.positionY = -50;
+        } else if (paddleShort.positionY >= screenY) {
+            paddleShort.isDropping = false;
+            paddleShort.positionX = -50;
+            paddleShort.positionY = -50;
+        }
+    }
+
+    void checkLifeCollision() {
+        Rect lifeRect = new Rect(life.positionX, life.positionY, life.positionX + life.width, life.positionY + life.width);
+        Rect paddleRect = new Rect(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height);
+
+        if (Rect.intersects(lifeRect, paddleRect)) {
+            lives++;
+            numOfExtraLives--;
+            life.isDropping = false;
+            life.positionX = -50;
+            life.positionY = -50;
+        } else if (life.positionY >= screenY) {
+            life.isDropping = false;
+            life.positionX = -50;
+            life.positionY = -50;
+        }
+    }
+
+    private void update() {
+        checkGameOver();
+        if (life.isDropping && ball.isMoving) {
+            life.positionY += 10;
+            checkLifeCollision();
+        }
+        if (paddleLengthen.isDropping && ball.isMoving) {
+            paddleLengthen.positionY += 10;
+            checkPaddleLengthenCollision();
+        }
+        if (paddleShort.isDropping && ball.isMoving) {
+            paddleShort.positionY += 30;
+            checkPaddleShortCollision();
+        }
+        if (takeLife.isDropping && ball.isMoving) {
+            takeLife.positionY += 30;
+            checkTakeLifeCollision();
+        }
+        if (isGameOver) {
+            Intent intent = new Intent().setClass(gameActivity.getApplication(), GameOverActivity.class);
+
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            String stringScore = String.valueOf(score);
+            intent.putExtra("SCORE", stringScore);
+            gameActivity.getApplication().startActivity(intent);
+        }
         if (paddle.isMovingRight) {
             paddle.x += 15;
             checkBorder();
-           // System.out.println(paddle.x);
         }
-
-
         if (paddle.isMovingLeft) {
             paddle.x -= 15;
             checkBorder();
         }
         checkBallCollision();
-
-        if(ball.isMoving == true) {
+        if (ball.isMoving) {
             ball.positionY += randomY;
             ball.positionX += randomX;
-
         }
-        if(ball.isMoving == true) {
+        if (ball.isMoving) {
             checkBrickCollision();
         }
-
-
     }
 
-    private void reset(){
+    void dropExtraLife(int positionX, int positionY) {
+        life = new Life(positionX, positionY, getResources(), true);
+    }
+
+    void dropPaddleLengthen(int positionX, int positionY) {
+        paddleLengthen = new PaddleLengthen(positionX, positionY, getResources(), true);
+    }
+
+    void dropPaddleShort(int positionX, int positionY) {
+        paddleShort = new PaddleShort(positionX, positionY, getResources(), true);
+    }
+
+    void dropTakeLife(int positionX, int positionY) {
+        takeLife = new TakeLife(positionX, positionY, getResources(), true);
+    }
+
+    void increasePaddleWidth() {
+        if (paddle.width < screenX / 5 * 2) {
+            paddle.width += 75;
+            paddle.paddle = Bitmap.createScaledBitmap(paddle.paddle, paddle.width, paddle.height, false);
+        }
+    }
+
+    void decreasePaddleWidth() {
+        if (paddle.width > originalPaddleWidth / 3 * 2) {
+            paddle.width -= 75;
+            paddle.paddle = Bitmap.createScaledBitmap(paddle.paddle, paddle.width, paddle.height, false);
+        }
+    }
+
+    private void reset() {
         ball = new Ball(screenX, screenY, getResources());
         paddle = new Paddle(screenX, getResources());
         lives--;
     }
 
-    private void gameOver(){
-        gameActivity.finish();
-    }
-
-
-    private void checkBorder(){
-        if(paddle.x < 0){
+    private void checkBorder() {
+        if (paddle.x < 0) {
             paddle.x = 0;
         }
-        if(paddle.x >= screenX - paddle.width){
+        if (paddle.x >= screenX - paddle.width) {
             paddle.x = screenX - paddle.width;
         }
     }
 
-    private void checkBrickCollision(){
-        A: for(int i=0; i<mapGenerator.map.length; i++){
-            for(int j=0; j<mapGenerator.map[0].length; j++){
-                if(mapGenerator.map[i][j] > 0){
-                    int xCord = j*mapGenerator.width + 80;
-                    int yCord = i* mapGenerator.height + 50;
+    private boolean checkIfPowerUp() {
+        Random random = new Random();
+        int randomValue = random.nextInt((10 - 1) + 1) + 1;
+        if (randomValue <= 2) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void checkBrickCollision() {
+        A:
+        for (int i = 0; i < mapGenerator.map.length; i++) {
+            for (int j = 0; j < mapGenerator.map[0].length; j++) {
+                if (mapGenerator.map[i][j] > 0) {
+                    int xCord = j * mapGenerator.width + 80;
+                    int yCord = i * mapGenerator.height + 50;
                     int w = mapGenerator.width;
                     int h = mapGenerator.height;
-
-                    Rect rect = new Rect(xCord, yCord, xCord +w, yCord +h);
+                    Rect rect = new Rect(xCord, yCord, xCord + w, yCord + h);
                     Rect ballRect = new Rect(ball.positionX, ball.positionY, ball.positionX + ball.width, ball.positionY + ball.width);
-                    if(Rect.intersects(rect, ballRect)){
-                        System.out.println("Collision");
+                    if (Rect.intersects(rect, ballRect)) {
+                        soundPool.play(sound, 1, 1, 0, 0, 1);
+                        try {
+                            if (numOfExtraLives > 0 && !life.isDropping) {
+                                if (checkIfPowerUp()) {
+                                    dropExtraLife(xCord + xCord / 2, yCord + yCord / 2);
+                                }
+                            }
+                            if (!paddleLengthen.isDropping) {
+                                if (checkIfPowerUp()) {
+                                    dropPaddleLengthen(xCord + xCord / 2, yCord + yCord / 2);
+                                }
+                            }
+                            if (!paddleShort.isDropping) {
+                                if (checkIfPowerUp()) {
+                                    dropPaddleShort(xCord + xCord / 2, yCord + yCord / 2);
+                                }
+                            }
+                            if (!takeLife.isDropping) {
+                                if (checkIfPowerUp()) {
+                                    dropTakeLife(xCord + xCord / 2, yCord + yCord / 2);
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        collisionCounter++;
                         mapGenerator.setBrickValue(0, i, j);
                         score++;
                         totalBricks--;
-                        if(ball.positionX + ball.width-1 <= rect.left || ball.positionX + 1 >= rect.right){
-                            randomX*=-1;
-                        } else{
-                            randomY*=-1;
+                        if (ball.positionX + ball.width - 1 <= rect.left || ball.positionX + 1 >= rect.right) {
+                            randomX *= -1;
+                        }
+
+                        if (ball.positionY + 1 >= rect.top || ball.positionY + ball.width - 1 <= rect.bottom) {
+                            randomY *= -1;
                         }
                         break A;
                     }
-
-
-
-
-//                    if(ball.positionY <= yCord + h && ball.positionX + ball.width/2 >= xCord && ball.positionX + ball.width/2 <= xCord + w){
-//                        score++;
-//                        randomY*=-1;
-//                        mapGenerator.setBrickValue(0, i, j);
-//                        break A;
-//                    }
-//                    if(ball.positionY >= yCord + ball.width && ball.positionX + ball.width/2 >= xCord && ball.positionX + ball.width/2 <= xCord + w){
-//                        score++;
-//                        randomY*=-1;
-//                        mapGenerator.setBrickValue(0, i, j);
-//                        break A;
-//                    }
-//                    if(ball.positionX <= xCord + w && ball.positionY + ball.width/2 >= yCord && ball.positionY + ball.width/2 <= yCord + h){
-//                        randomX*=-1;
-//                        score++;
-//                        mapGenerator.setBrickValue(0, i, j);
-//                        break A;
-//                    }
-//                    if(ball.positionX >= xCord - ball.width && ball.positionY + ball.width/2 >= yCord && ball.positionY + ball.width/2 <= yCord + h){
-//                        randomX*=-1;
-//                        score++;
-//                        mapGenerator.setBrickValue(0, i, j);
-//                        break A;
-//                    }
-
                 }
             }
         }
     }
 
-    private void checkBallCollision(){
-        //Left
-        if(ball.positionX <= 1){
+    private void checkBallCollision() {
+        Rect ballRect = new Rect(ball.positionX, ball.positionY, ball.positionX + ball.width, ball.positionY + ball.width);
+        Rect paddleRect = new Rect(paddle.x, paddle.y, paddle.x + paddle.width, paddle.y + paddle.height);
+        if (Rect.intersects(ballRect, paddleRect)) {
+            if (ball.positionY + ball.width >= paddle.x) {
+                if (randomY < 30) {
+                    System.out.println("RandomY: " + randomY);
+                    randomY += 3;
+                }
+                if (ball.positionX + ball.width / 2 < paddle.x + paddle.width / 15) {
+                    if (randomX > 0) {
+                        randomX += 2;
+                        randomX *= -1;
+                    }
+                }
+                if (ball.positionX + ball.width / 2 > paddle.x + paddle.width / 15 * 14) {
+                    if (randomX < 0) {
+                        randomX -= 2;
+                        randomX *= -1;
+                    }
+                }
+                randomY *= -1;
+            }
+
+        }
+        //Left Border
+        if (ball.positionX <= 1) {
             randomX = randomX * (-1);
         }
-        //Right
-        if(ball.positionX >= screenX - ball.width - 1){
+        //Right Border
+        if (ball.positionX >= screenX - ball.width - 1) {
             randomX = randomX * (-1);
         }
-        //Top
-        if(ball.positionY <= 0){
+        //Top Border
+        if (ball.positionY <= 50) {
             randomY = randomY * (-1);
         }
-
-        //Paddle
-        if(screenY - ball.positionY - ball.width <= screenY - paddle.y && ball.positionX + ball.width/2 >= paddle.x && ball.positionX + ball.width/2 <= paddle.x + paddle.width){
-            //Left
-            if(ball.positionX + ball.width/2 < paddle.x + paddle.width/15){
-                if(randomX > 0){
-                    randomX*=-1;
-                }
-            }
-
-            //Right
-            if(ball.positionX + ball.width/2 > paddle.x + paddle.width/15 * 14){
-                if(randomX < 0){
-                    randomX*=-1;
-                }
-            }
-            randomY*=-1;
-        }
-
-        if(screenY - ball.positionY - ball.width < screenY - paddle.y - paddle.height/2 && ball.isMoving){
-            if(lives > 0) {
+        if (screenY - ball.positionY - ball.width < screenY - paddle.y - paddle.height / 2 && ball.isMoving) {
+            if (lives > 0) {
                 reset();
-            } else{
-                gameOver();
+            } else {
+                isGameOver = true;
             }
         }
     }
@@ -301,14 +470,18 @@ public class GameView extends SurfaceView implements Runnable {
         System.out.println(randomY);
     }
 
-
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        switch(event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if(event.getX() < screenX/2){
+                if (totalBricks <= 0) {
+                    level++;
+                    needNewLevel = true;
+                    break;
+                }
+                if (event.getX() < screenX / 2) {
                     paddle.isMovingLeft = true;
-                } else{
+                } else {
                     paddle.isMovingRight = true;
                 }
                 break;
@@ -320,76 +493,3 @@ public class GameView extends SurfaceView implements Runnable {
         return true;
     }
 }
-
-
-//    public void generateBricks(int numOfRows, int numOfColumns, int width, int height, Canvas canvas){
-//        for(int row = 30; row<screenY/2; row+=screenX/numOfRows){
-//            for(int col = 30; col<screenX - screenX/15; col+= screenX/numOfColumns){
-//                if(!checkIfBallCollides(col, row, height, width)){
-//                    for(Coordinates coordinates : savedCoord) {
-//                        if(!(coordinates.x == col && coordinates.y == row)) {
-//                            canvas.drawBitmap(createBrick(width, height, false), col, row, paint);
-//                        }
-//                    }
-//                } else{
-//                    Coordinates coordinates = new Coordinates(col, row);
-//                    savedCoord.add(coordinates);
-//                    score++;
-//                }
-//            }
-//        }
-//
-//    }
-
-
-//    public boolean checkIfBallCollides(int positionX, int positionY, int height, int width){
-//        boolean isCollision = false;
-//        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX >= positionX - ball.width){
-////            randomX*=-1;
-//            isCollision = true;}
-//        if(ball.positionY + ball.width/2 >= positionY && ball.positionY + ball.width/2 <= positionY + height && ball.positionX <= positionX + width){
-////            randomX*=-1;
-//            isCollision = true;}
-//        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY <= positionY + height){
-////            randomY*=-1;
-//            isCollision = true;}
-//        if(ball.positionX + ball.width/2 >= positionX && ball.positionX + ball.width/2 <= positionX + width && ball.positionY >= positionY + ball.width){
-////            randomY*=-1;
-//            isCollision = true;}
-//        return isCollision;
-//    }
-
-//    public void generateCoordinates(int numOfRows, int numOfColumns) {
-//        for (int row = 30; row < screenY / 2; row += screenX/numOfRows) {
-//            for (int col = 30; col < screenX - screenX/15; col += screenX/numOfColumns) {
-//                Coordinates coordinates = new Coordinates(col, row);
-//                coordlist.add(coordinates);
-//
-//            }
-//        }
-//    }
-
-
-
-
-//    public void drawBricks(int level, Canvas canvas)
-
-
-
-//    public void buildBricks(int level){
-//        Brick testBrick = new Brick(getResources(), false);
-//        if(level == 1){
-//            bricks = new Brick[100];
-//            int counter = 0;
-//            for(int row = 30; row<screenY/2; row+=testBrick.height) {
-//                for (int col = 30; col < screenX - testBrick.width; col += testBrick.width) {
-//                    Brick brick = new Brick(getResources(), false);
-//                    bricks[counter] = brick;
-//                    counter++;
-//                }
-//            }
-//
-//
-//
-//        }
-//    }
